@@ -4,7 +4,7 @@
 
 VERSION="1.0"
 AUTHY_URL="https://api.authy.com"
-CONFIG_FILE="/etc/openvpn/authy/authy-vpn.conf"
+CONFIG_FILE="/config/openvpn/authy/authy-vpn.conf"
 
 export TERM="xterm-256color"
 NORMAL=$(tput sgr0)
@@ -52,9 +52,21 @@ function check_api_key() {
 # usage: register_user "login" "<email>" "<country-code>" "<cellphone>"
 function register_user() {
     local login=$1
-    url="$AUTHY_URL/protected/json/users/new?api_key=${AUTHY_API_KEY} -d user[email]=$2 -d user[country_code]=$3 -d user[cellphone]=$4 -s"
+    agent='-A "curl/7.52.1"'
+    url="$agent $AUTHY_URL/protected/json/users/new?api_key=$5 -d user[email]=$2 -d user[country_code]=$3 -d user[cellphone]=$4 -s"
 
-    green "Registering the user with Authy"
+    if [[ $6 == "delete" ]]
+    then
+        user_id=`grep $login /config/openvpn/authy/authy-vpn.conf | cut -d " " -f2`
+        response=`curl $agent -X POST $AUTHY_URL/protected/json/users/$user_id/delete -H "X-Authy-API-Key: $5" 2>/dev/null`
+        sed -i "/$login/d" $CONFIG_FILE
+        exit 0
+    fi
+
+    if grep -q $login /config/openvpn/authy/authy-vpn.conf
+    then
+        exit 0
+    fi
 
     response=`curl ${url} 2>/dev/null`
     ok=true
@@ -88,7 +100,7 @@ function register_user() {
         if [[ $user_id ]]
         then
             echo "$login $user_id" >> $CONFIG_FILE
-            green "Success: User $login was registered with AUTHY_ID $user_id."
+            echo "added $login"
             return 0
         else
             red "Cannot register user: $response"
@@ -104,7 +116,7 @@ function register_user() {
 
 function read_config()
 {
-  local api_key="$(cat /etc/openvpn/*.conf | grep authy-openvpn.so -m 1 | cut -d" " -f4)"
+  local api_key="$(cat /opt/vyatta/etc/openvpn/*.conf | grep authy-openvpn.so -m 1 | cut -d" " -f4)"
 
   if [[ $api_key != "" ]]
   then
@@ -114,34 +126,6 @@ function read_config()
 
   return 1
 }
-
-function register_users()
-{
-    echo "This script is to add users to Authy Open VPN"
-    echo "For each user you will need to provide the vpn login, e-mail, country code and cellphone"
-    echo "For PAM, login is the *nix login or your PAM login username."
-    echo "For certificate based Auth we recommend you use e-mails as the login."
-
-    echo -n "Login: "
-    read login
-
-    echo -n "Email: "
-    read email
-
-    echo -n "Country Code (EG. 1 for US): "
-    read country_code
-
-    echo -n "Cellphone: "
-    read cellphone
-
-    register_user $login $email $country_code $cellphone
-
-    if [[ $? -ne 0 ]] ; then
-        red "Failed to add user. Try again."
-        exit 1
-    fi
-}
-
 
 # cd - >/dev/null
 require_curl
@@ -159,5 +143,5 @@ chown root $CONFIG_FILE
 chmod 600  $CONFIG_FILE
 
 check_api_key
-register_users
+register_user $@
 
