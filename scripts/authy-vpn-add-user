@@ -116,7 +116,7 @@ function register_user() {
 
 function read_config()
 {
-  local api_key="$(cat /opt/vyatta/etc/openvpn/*.conf | grep authy-openvpn.so -m 1 | cut -d" " -f4)"
+  local api_key="$(cat /run/openvpn/*.conf | grep authy-openvpn.so -m 1 | cut -d" " -f4)"
 
   if [[ $api_key != "" ]]
   then
