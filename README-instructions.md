@@ -120,14 +120,14 @@ To start adding users type:
 
 ## How Authy-VPN works
 
-Authy stores it's configuration in the file `/etc/openvpn/authy/authy-vpn.conf`
+Authy stores it's configuration in the file `/config/openvpn/authy/authy-vpn.conf`
 The files format is:
 
     username authy_id
 
 For example for `liz@authy.com` it would look:
 
-    sudo cat /etc/openvpn/authy/authy-vpn.conf
+    sudo cat /config/openvpn/authy/authy-vpn.conf
     liz@authy.com 12323
 
 When liz is login in, she will type `liz@authy.com` as her username and the
@@ -140,7 +140,7 @@ You can edit this file by hand or using `authy-vpn-add-user`
 In this scenario user needs: username + certificate + token to login.
 
 If you're  already using certificates to authenticate your vpn users you won't
-need to regenerate them. All you have to do is edit '/etc/openvpn/authy/authy-vpn.conf' were you tell
+need to regenerate them. All you have to do is edit '/config/openvpn/authy/authy-vpn.conf' were you tell
 authy the users login and the AUTHY_ID.
 
 ##### Example authy-vpn.conf for a user joe with AUTHY_ID 10229
